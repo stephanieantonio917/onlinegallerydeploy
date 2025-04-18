@@ -1,0 +1,45 @@
+# ========================
+# Node.js + Vite + React
+# ========================
+
+# Node modules (client & server)
+**/node_modules/
+
+# Environment variables
+**/.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Build output (Vite/React)
+client/dist/
+client/.vite/
+.vite/
+
+# Coverage (optional if using testing)
+coverage/
+
+# Optional IDE settings
+.vscode/
+.idea/
+*.sw?
+
+# Mac files
+.AppleDouble
+.LSOverride
+
+# Windows files
+ehthumbs.db
+Desktop.ini
+
+# Dependency lock files (optional if using specific lock strategy)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml

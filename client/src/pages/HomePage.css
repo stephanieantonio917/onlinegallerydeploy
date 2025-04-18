@@ -1,0 +1,27 @@
+
+
+  .home-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem; /* Add padding around whole page */
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .gallery-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1rem; /* 👈 Add margin around the entire grid */
+    max-width: 1200px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  
