@@ -13,28 +13,35 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js version
+      - name: 🧰 Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test (inside /server)
+      - name: ⚙️ Install and build client
+        run: |
+          cd client
+          npm install
+          npm run build
+
+      - name: ⚙️ Install backend dependencies
         run: |
           cd server
           npm install
-          npm run build --if-present
-        working-directory: .
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+      - name: 📦 Zip server for deployment
+        run: |
+          cd server
+          zip -r release.zip ./*
 
-      - name: Upload artifact for deployment job
+      - name: ⬆️ Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: release.zip
+          path: server/release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,12 +54,25 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: ⬇️ Download artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
 
-      - name: Unzip artifact for deployment
+      - name: 📂 Unzip artifact
         run: unzip release.zip
 
-      - name: Login to Azure
+      - name: 🔐 Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_700D9135A38B4783BBB31B48ED71AEB2 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C1B1D07AA2A04781867E63280D62A756 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FD67E5F4CDA94F55BD632BEFDF43C069 }}
+
+      - name: 🚀 Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'onlinegalleryfirst'
+          slot-name: 'Production'
+          package: .
