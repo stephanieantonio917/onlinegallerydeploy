@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - onlinegalleryfirst
 
 on:
@@ -13,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +20,12 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test
+      - name: npm install, build, and test (inside /server)
         run: |
+          cd server
           npm install
           npm run build --if-present
-          npm run test --if-present
+        working-directory: .
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
@@ -45,8 +43,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -56,19 +54,5 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_700D9135A38B4783BBB31B48ED71AEB2 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C1B1D07AA2A04781867E63280D62A756 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FD67E5F4CDA94F55BD632BEFDF43C069 }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'onlinegalleryfirst'
-          slot-name: 'Production'
-          package: .
-          
+      - name: Login to Azure
