@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import pool from './db.js';
 
+console.log("🚀 Server file loaded successfully");
+
 dotenv.config();
 
 const app = express();
