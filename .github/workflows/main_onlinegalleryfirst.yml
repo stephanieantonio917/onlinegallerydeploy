@@ -21,11 +21,16 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: ⚙️ Install and build client
+      - name: ⚙️ Install and build frontend
         run: |
           cd client
           npm install
           npm run build
+
+      - name: 📁 Copy built frontend to backend folder
+        run: |
+          rm -rf server/client-dist
+          cp -r client/dist server/client-dist
 
       - name: ⚙️ Install backend dependencies
         run: |
