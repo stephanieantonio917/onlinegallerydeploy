@@ -37,16 +37,16 @@ jobs:
           cd server
           npm install
 
-      - name: 📦 Zip server for deployment
+      - name: 📦 Zip server contents for deployment (no top-level server folder)
         run: |
           cd server
-          zip -r release.zip ./*
+          zip -r ../release.zip ./*
 
       - name: ⬆️ Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: server/release.zip
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
