@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import pool from './db.js';
 
 dotenv.config();
@@ -8,15 +10,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Enable JSON and CORS
 app.use(cors());
 app.use(express.json());
 
-// Root route
+// Static file path helpers
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 🔥 Serve the React build folder (built by GitHub Actions)
+app.use(express.static(path.join(__dirname, 'client-dist')));
+
+// API Routes
+
 app.get('/', (req, res) => {
   res.send('🎨 Online Gallery API is running!');
 });
 
-// GET all paintings (regardless of status)
 app.get('/paintings', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM paintings ORDER BY created_at DESC');
@@ -27,14 +37,10 @@ app.get('/paintings', async (req, res) => {
   }
 });
 
-// GET a single painting by ID
 app.get('/paintings/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      'SELECT * FROM paintings WHERE painting_id = $1',
-      [id]
-    );
+    const result = await pool.query('SELECT * FROM paintings WHERE painting_id = $1', [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Painting not found' });
     }
@@ -45,12 +51,9 @@ app.get('/paintings/:id', async (req, res) => {
   }
 });
 
-
-// PUT update a painting by ID
 app.put('/paintings/:id', async (req, res) => {
   const { id } = req.params;
   const { title, artist, price, image_url, status } = req.body;
-
   try {
     const result = await pool.query(
       `UPDATE paintings
@@ -59,11 +62,9 @@ app.put('/paintings/:id', async (req, res) => {
        RETURNING *`,
       [title, artist, price, image_url, status, id]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Painting not found" });
     }
-
     res.json(result.rows[0]);
   } catch (err) {
     console.error("❌ Error updating painting:", err);
@@ -73,7 +74,6 @@ app.put('/paintings/:id', async (req, res) => {
 
 app.post('/paintings', async (req, res) => {
   const { title, artist, price, image_url, status } = req.body;
-
   try {
     const result = await pool.query(
       `INSERT INTO paintings (title, artist, price, image_url, status, created_at)
@@ -88,21 +88,16 @@ app.post('/paintings', async (req, res) => {
   }
 });
 
-
-// DELETE a painting by ID
 app.delete('/paintings/:id', async (req, res) => {
   const { id } = req.params;
-
   try {
     const result = await pool.query(
       'DELETE FROM paintings WHERE painting_id = $1 RETURNING *',
       [id]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Painting not found' });
     }
-
     res.json({ message: 'Painting deleted successfully' });
   } catch (err) {
     console.error('❌ Error deleting painting:', err);
@@ -110,15 +105,9 @@ app.delete('/paintings/:id', async (req, res) => {
   }
 });
 
-
-
-
-// POST a new order
 app.post('/orders', async (req, res) => {
   try {
     const { user_id, painting_ids } = req.body;
-
-    // 1. Create order
     const orderResult = await pool.query(
       `INSERT INTO orders (user_id, status, created_at)
        VALUES ($1, $2, now())
@@ -127,14 +116,12 @@ app.post('/orders', async (req, res) => {
     );
     const order_id = orderResult.rows[0].order_id;
 
-    // 2. Insert into order_items and update painting status
     for (const painting_id of painting_ids) {
       await pool.query(
         `INSERT INTO order_items (order_id, painting_id, quantity)
          VALUES ($1, $2, 1)`,
         [order_id, painting_id]
       );
-
       await pool.query(
         `UPDATE paintings SET status = $1 WHERE painting_id = $2`,
         ['sold', painting_id]
@@ -148,11 +135,9 @@ app.post('/orders', async (req, res) => {
   }
 });
 
-// GET all orders for a user
 app.get('/orders/:user_id', async (req, res) => {
   const { user_id } = req.params;
   console.log(`📦 Fetching orders for user: ${user_id}`);
-
   try {
     const orders = await pool.query(
       `
@@ -177,7 +162,6 @@ app.get('/orders/:user_id', async (req, res) => {
       `,
       [user_id]
     );
-
     res.json(orders.rows);
   } catch (err) {
     console.error('❌ Error fetching user orders:', err);
@@ -185,7 +169,6 @@ app.get('/orders/:user_id', async (req, res) => {
   }
 });
 
-// GET all orders (with user and painting info)
 app.get('/orders', async (req, res) => {
   try {
     const query = `
@@ -209,13 +192,17 @@ app.get('/orders', async (req, res) => {
       GROUP BY o.order_id, u.full_name, u.email, o.status, o.created_at
       ORDER BY o.created_at DESC;
     `;
-
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
     console.error('❌ Error fetching all orders:', err);
     res.status(500).json({ error: 'Failed to fetch all orders' });
   }
+});
+
+// ⚠️ This should come *after* all API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client-dist', 'index.html'));
 });
 
 // Start the server
